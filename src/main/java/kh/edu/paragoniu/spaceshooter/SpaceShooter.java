@@ -237,21 +237,30 @@ public class SpaceShooter extends GameApplication {
 
             int score = FXGL.geti("score");
 
-            // Spawn more enemies at higher scores
-            int minEnemies = 2 + score / 20; // +1 enemy every 20 points
-            int maxEnemies = 4 + score / 15;
+            // Determine how many enemies to spawn
+            int minEnemies = 2;
+            int maxEnemies = 4;
+
+            if (score >= 30) {
+                minEnemies = 4;
+                maxEnemies = 6;
+            }
+            if (score >= 60) {
+                minEnemies = 5;
+                maxEnemies = 8;
+            }
+            if (score >= 100) {
+                minEnemies = 7;
+                maxEnemies = 10;
+            }
 
             int enemy_ships = FXGL.random(minEnemies, maxEnemies);
 
             for (int i = 0; i < enemy_ships; i++) {
-                Entity enemy = FXGL.spawn("enemy_ship",
+                FXGL.spawn("enemy_ship",
                         FXGL.random(0, FXGL.getAppWidth() - 60),
                         -40
                 );
-
-                // Make enemies faster with higher score
-                double speed = 50 + score * 0.5; // base speed + 0.5 per score point
-                enemy.getComponent(PhysicsComponent.class).setVelocityY(speed);
             }
         }, Duration.seconds(5));
 
