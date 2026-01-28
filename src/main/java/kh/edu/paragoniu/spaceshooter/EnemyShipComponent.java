@@ -22,13 +22,16 @@ public class EnemyShipComponent extends Component {
 
     @Override
     public void onUpdate(double tpf) {
+
+        //Move vertically
+        entity.translateY(SPEED * tpf);
+
+        if (entity.getY() > FXGL.getAppHeight()) {
+            entity.removeFromWorld();
+        }
+
         // Move horizontally
         entity.translateX(directionX * SPEED * tpf);
-
-        // Keep enemy near the top
-        if (entity.getY() > 200) {
-            entity.setY(200);
-        }
 
         // Change direction randomly over time
         timeSinceLastChange += tpf;

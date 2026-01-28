@@ -27,7 +27,7 @@ public class SpaceShooter extends GameApplication {
     public enum EntityType {
         PLAYER, BULLET, OBSTACLE, ENEMY_SHIP, ENEMY_BULLET
     }
-    private int fireMode = 1;
+    private int fireMode;
     private Entity player;
     private static final Point2D GUN_OFFSET = new Point2D(20, -10);
 
@@ -54,7 +54,7 @@ public class SpaceShooter extends GameApplication {
             protected void onActionEnd(){
                 player.getComponent(PhysicsComponent.class).setVelocityX(0);
             }
-        }, KeyCode.LEFT);
+        }, KeyCode.A);
 
 
         FXGL.getInput().addAction(new UserAction("RIGHT") {
@@ -66,7 +66,7 @@ public class SpaceShooter extends GameApplication {
             protected void onActionEnd(){
                 player.getComponent(PhysicsComponent.class).setVelocityX(0);
             }
-        }, KeyCode.RIGHT);
+        }, KeyCode.D);
 
         FXGL.getInput().addAction(new UserAction("Down") {
             @Override
@@ -78,7 +78,7 @@ public class SpaceShooter extends GameApplication {
             protected void onActionEnd() {
                 player.getComponent(PhysicsComponent.class).setVelocityY(0);
             }
-        }, KeyCode.DOWN);
+        }, KeyCode.S);
 
         FXGL.getInput().addAction(new UserAction("Up") {
             @Override
@@ -90,7 +90,7 @@ public class SpaceShooter extends GameApplication {
             protected void onActionEnd() {
                 player.getComponent(PhysicsComponent.class).setVelocityY(0);
             }
-        }, KeyCode.UP);
+        }, KeyCode.W);
 //        FXGL.getInput().addAction(new UserAction("Shoot") {
 //            @Override
 //            protected void onActionBegin() {
@@ -99,26 +99,26 @@ public class SpaceShooter extends GameApplication {
 //        }, KeyCode.SPACE);
 
 
-        FXGL.getInput().addAction(new UserAction("Single Shot") {
-            @Override
-            protected void onActionBegin() {
-                fireMode = 1;
-            }
-        }, KeyCode.DIGIT1);
-
-        FXGL.getInput().addAction(new UserAction("Double Shot") {
-            @Override
-            protected void onActionBegin() {
-                fireMode = 2;
-            }
-        }, KeyCode.DIGIT2);
-
-        FXGL.getInput().addAction(new UserAction("Triple Shot") {
-            @Override
-            protected void onActionBegin() {
-                fireMode = 3;
-            }
-        }, KeyCode.DIGIT3);
+//        FXGL.getInput().addAction(new UserAction("Single Shot") {
+//            @Override
+//            protected void onActionBegin() {
+//                fireMode = 1;
+//            }
+//        }, KeyCode.DIGIT1);
+//
+//        FXGL.getInput().addAction(new UserAction("Double Shot") {
+//            @Override
+//            protected void onActionBegin() {
+//                fireMode = 2;
+//            }
+//        }, KeyCode.DIGIT2);
+//
+//        FXGL.getInput().addAction(new UserAction("Triple Shot") {
+//            @Override
+//            protected void onActionBegin() {
+//                fireMode = 3;
+//            }
+//        }, KeyCode.DIGIT3);
 
         // Add pause/menu key
         FXGL.getInput().addAction(new UserAction("Pause") {
@@ -170,8 +170,8 @@ public class SpaceShooter extends GameApplication {
                 ClassLoader.getSystemResource("nyan_cat.png").toString()
         );
         ImageView playerView = new ImageView(playerImg);
-        playerView.setFitWidth(50);
-        playerView.setFitHeight(50);
+        playerView.setFitWidth(75);
+        playerView.setFitHeight(75);
         playerView.setPreserveRatio(true);
         playerView.setRotate(-90.0);
 
@@ -185,23 +185,27 @@ public class SpaceShooter extends GameApplication {
                 .buildAndAttach();
 
         // Auto-fire system with automatic upgrade based on score
-        FXGL.run(() -> {
+        FXGL.getGameTimer().runAtInterval(() -> {
 
             Point2D center = player.getCenter();
 
             // Calculate current fire mode based on score
             int score = FXGL.geti("score");
-            int currentFireMode;
+//            int currentFireMode;
+//
+//            if (score >= 100) {
+//                currentFireMode = 3; // Triple shot at 200+ points
+//            } else if (score >= 30) {
+//                currentFireMode = 2; // Double shot at 100+ points
+//            } else {
+//                currentFireMode = 1; // Single shot below 100 points
+//            }
 
-            if (score >= 200) {
-                currentFireMode = 3; // Triple shot at 200+ points
-            } else if (score >= 100) {
-                currentFireMode = 2; // Double shot at 100+ points
-            } else {
-                currentFireMode = 1; // Single shot below 100 points
-            }
+            fireMode = score >= 60 ? 3
+                    : score >= 30 ? 2
+                    : 1;
 
-            switch (currentFireMode) {
+            switch (fireMode) {
 
                 case 1: // SINGLE
                     FXGL.spawn("bullet", center);
@@ -221,7 +225,7 @@ public class SpaceShooter extends GameApplication {
 
         }, Duration.seconds(0.15));
 
-        FXGL.run(() -> {
+        FXGL.getGameTimer().runAtInterval(() -> {
 
             double x = FXGL.random(0, 770);
 
@@ -229,13 +233,36 @@ public class SpaceShooter extends GameApplication {
 
         }, Duration.seconds(1));
 
-        for (int i = 0; i < 5; i++) {
-            FXGL.spawn("enemy_ship",
-                    FXGL.random(0, FXGL.getAppWidth() - 60),
-                    FXGL.random(30, 120)
-            );
-        }
+        FXGL.getGameTimer().runAtInterval(() ->{
 
+            int score = FXGL.geti("score");
+
+            // Determine how many enemies to spawn
+            int minEnemies = 2;
+            int maxEnemies = 4;
+
+            if (score >= 30) {
+                minEnemies = 4;
+                maxEnemies = 6;
+            }
+            if (score >= 60) {
+                minEnemies = 5;
+                maxEnemies = 8;
+            }
+            if (score >= 100) {
+                minEnemies = 7;
+                maxEnemies = 10;
+            }
+
+            int enemy_ships = FXGL.random(minEnemies, maxEnemies);
+
+            for (int i = 0; i < enemy_ships; i++) {
+                FXGL.spawn("enemy_ship",
+                        FXGL.random(0, FXGL.getAppWidth() - 60),
+                        -40
+                );
+            }
+        }, Duration.seconds(5));
 
     }
 
@@ -252,21 +279,15 @@ public class SpaceShooter extends GameApplication {
         FXGL.onCollisionBegin(EntityType.BULLET, EntityType.OBSTACLE, (bullet, obstacle) -> {
             bullet.removeFromWorld();
             obstacle.removeFromWorld();
-            FXGL.inc("score", 10);
+            FXGL.inc("score", 1);
         });
 
         // Bullet hits Enemy Ship - THE KEY FIX
         FXGL.onCollisionBegin(EntityType.BULLET, EntityType.ENEMY_SHIP, (bullet, enemy) -> {
             bullet.removeFromWorld();
             enemy.removeFromWorld();
-            FXGL.inc("score", 50);
+            FXGL.inc("score", 1);
             FXGL.inc("enemiesKilled", 1);
-
-            // Spawn new enemy to replace destroyed one
-            FXGL.spawn("enemy_ship",
-                    FXGL.random(0, FXGL.getAppWidth() - 60),
-                    FXGL.random(30, 120)
-            );
         });
 
         // Enemy Bullet hits Player
@@ -283,12 +304,6 @@ public class SpaceShooter extends GameApplication {
         FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.ENEMY_SHIP, (player, enemy) -> {
             enemy.removeFromWorld();
             FXGL.inc("lives", -1);
-
-            // Spawn new enemy
-            FXGL.spawn("enemy_ship",
-                    FXGL.random(0, FXGL.getAppWidth() - 60),
-                    FXGL.random(30, 120)
-            );
 
             if (FXGL.geti("lives") <= 0) {
                 GameOverHandler.handleGameOver();
@@ -335,9 +350,9 @@ public class SpaceShooter extends GameApplication {
         fireModeText.textProperty().bind(
                 FXGL.getip("score").asString().map(scoreStr -> {
                     int score = Integer.parseInt(scoreStr);
-                    if (score >= 200) {
+                    if (score >= 60) {
                         return "FIRE MODE: TRIPLE ⚡⚡⚡";
-                    } else if (score >= 100) {
+                    } else if (score >= 30) {
                         return "FIRE MODE: DOUBLE ⚡⚡";
                     } else {
                         return "FIRE MODE: SINGLE ⚡";
