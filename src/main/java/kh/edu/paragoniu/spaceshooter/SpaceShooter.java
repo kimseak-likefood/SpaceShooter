@@ -68,7 +68,29 @@ public class SpaceShooter extends GameApplication {
             }
         }, KeyCode.RIGHT);
 
+        FXGL.getInput().addAction(new UserAction("Down") {
+            @Override
+            protected void onActionBegin() {
+                player.getComponent(PhysicsComponent.class).setVelocityY(300);
+            }
 
+            @Override
+            protected void onActionEnd() {
+                player.getComponent(PhysicsComponent.class).setVelocityY(0);
+            }
+        }, KeyCode.DOWN);
+
+        FXGL.getInput().addAction(new UserAction("Up") {
+            @Override
+            protected void onActionBegin() {
+                player.getComponent(PhysicsComponent.class).setVelocityY(-300);
+            }
+
+            @Override
+            protected void onActionEnd() {
+                player.getComponent(PhysicsComponent.class).setVelocityY(0);
+            }
+        }, KeyCode.UP);
 //        FXGL.getInput().addAction(new UserAction("Shoot") {
 //            @Override
 //            protected void onActionBegin() {
