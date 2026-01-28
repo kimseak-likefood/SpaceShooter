@@ -2,6 +2,7 @@ package kh.edu.paragoniu.spaceshooter;
 
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
+import com.almasb.fxgl.app.MenuItem;
 import com.almasb.fxgl.dsl.FXGL;
 import com.almasb.fxgl.entity.Entity;
 import com.almasb.fxgl.entity.components.CollidableComponent;
@@ -34,6 +35,11 @@ public class SpaceShooter extends GameApplication {
         gameSettings.setHeight(800);
         gameSettings.setWidth(800);
         gameSettings.setTitle("SpaceShooterGame");
+        gameSettings.setVersion("1.0");
+
+        // Enable menu with Resume and custom options
+        gameSettings.setMainMenuEnabled(true);
+        gameSettings.setGameMenuEnabled(true);
     }
 
     @Override
@@ -90,6 +96,22 @@ public class SpaceShooter extends GameApplication {
                 fireMode = 3;
             }
         }, KeyCode.DIGIT3);
+
+        // Add pause/menu key
+        FXGL.getInput().addAction(new UserAction("Pause") {
+            @Override
+            protected void onActionBegin() {
+                FXGL.getGameController().pauseEngine();
+            }
+        }, KeyCode.ESCAPE);
+
+        // Add leaderboard key
+        FXGL.getInput().addAction(new UserAction("Show Leaderboard") {
+            @Override
+            protected void onActionBegin() {
+                LeaderboardManager.showLeaderboard();
+            }
+        }, KeyCode.L);
     }
 
     @Override
@@ -126,11 +148,24 @@ public class SpaceShooter extends GameApplication {
                 .with(new CollidableComponent(true))
                 .buildAndAttach();
 
+        // Auto-fire system with automatic upgrade based on score
         FXGL.run(() -> {
 
             Point2D center = player.getCenter();
 
-            switch (fireMode) {
+            // Calculate current fire mode based on score
+            int score = FXGL.geti("score");
+            int currentFireMode;
+
+            if (score >= 200) {
+                currentFireMode = 3; // Triple shot at 200+ points
+            } else if (score >= 100) {
+                currentFireMode = 2; // Double shot at 100+ points
+            } else {
+                currentFireMode = 1; // Single shot below 100 points
+            }
+
+            switch (currentFireMode) {
 
                 case 1: // SINGLE
                     FXGL.spawn("bullet", center);
@@ -149,6 +184,7 @@ public class SpaceShooter extends GameApplication {
             }
 
         }, Duration.seconds(0.15));
+
         FXGL.run(() -> {
 
             double x = FXGL.random(0, 770);
@@ -166,26 +202,72 @@ public class SpaceShooter extends GameApplication {
 
 
     }
+
     @Override
     protected void initGameVars(java.util.Map<String, Object> vars) {
         vars.put("score", 0);
         vars.put("lives", 3);
+        vars.put("enemiesKilled", 0);
     }
 
     @Override
     protected void initPhysics() {
-        FXGL.getPhysicsWorld().addCollisionHandler(
-                new com.almasb.fxgl.physics.CollisionHandler(
-                        EntityType.BULLET, EntityType.OBSTACLE) {
+        // Bullet hits Obstacle
+        FXGL.onCollisionBegin(EntityType.BULLET, EntityType.OBSTACLE, (bullet, obstacle) -> {
+            bullet.removeFromWorld();
+            obstacle.removeFromWorld();
+            FXGL.inc("score", 10);
+        });
 
-                    @Override
-                    protected void onCollisionBegin(Entity bullet, Entity obstacle) {
-                        bullet.removeFromWorld();
-                        obstacle.removeFromWorld();
-                        FXGL.inc("score", 10);
-                    }
-                }
-        );
+        // Bullet hits Enemy Ship - THE KEY FIX
+        FXGL.onCollisionBegin(EntityType.BULLET, EntityType.ENEMY_SHIP, (bullet, enemy) -> {
+            bullet.removeFromWorld();
+            enemy.removeFromWorld();
+            FXGL.inc("score", 50);
+            FXGL.inc("enemiesKilled", 1);
+
+            // Spawn new enemy to replace destroyed one
+            FXGL.spawn("enemy_ship",
+                    FXGL.random(0, FXGL.getAppWidth() - 60),
+                    FXGL.random(30, 120)
+            );
+        });
+
+        // Enemy Bullet hits Player
+        FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.ENEMY_BULLET, (player, enemyBullet) -> {
+            enemyBullet.removeFromWorld();
+            FXGL.inc("lives", -1);
+
+            if (FXGL.geti("lives") <= 0) {
+                GameOverHandler.handleGameOver();
+            }
+        });
+
+        // Player hits Enemy Ship
+        FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.ENEMY_SHIP, (player, enemy) -> {
+            enemy.removeFromWorld();
+            FXGL.inc("lives", -1);
+
+            // Spawn new enemy
+            FXGL.spawn("enemy_ship",
+                    FXGL.random(0, FXGL.getAppWidth() - 60),
+                    FXGL.random(30, 120)
+            );
+
+            if (FXGL.geti("lives") <= 0) {
+                GameOverHandler.handleGameOver();
+            }
+        });
+
+        // Obstacle hits Player
+        FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.OBSTACLE, (player, obstacle) -> {
+            obstacle.removeFromWorld();
+            FXGL.inc("lives", -1);
+
+            if (FXGL.geti("lives") <= 0) {
+                GameOverHandler.handleGameOver();
+            }
+        });
     }
 
     @Override
@@ -210,15 +292,47 @@ public class SpaceShooter extends GameApplication {
         livesText.setTranslateX(20);
         livesText.setTranslateY(60);
 
-        var autoFireText = FXGL.getUIFactoryService()
-                .newText("AUTO FIRE", Color.RED, 18);
+        // Dynamic fire mode indicator that shows current level
+        var fireModeText = FXGL.getUIFactoryService()
+                .newText("", Color.YELLOW, 18);
 
-        autoFireText.setTranslateX(650);
-        autoFireText.setTranslateY(30);
+        fireModeText.textProperty().bind(
+                FXGL.getip("score").asString().map(scoreStr -> {
+                    int score = Integer.parseInt(scoreStr);
+                    if (score >= 200) {
+                        return "FIRE MODE: TRIPLE ⚡⚡⚡";
+                    } else if (score >= 100) {
+                        return "FIRE MODE: DOUBLE ⚡⚡";
+                    } else {
+                        return "FIRE MODE: SINGLE ⚡";
+                    }
+                })
+        );
+
+        fireModeText.setTranslateX(550);
+        fireModeText.setTranslateY(30);
+
+        var enemiesText = FXGL.getUIFactoryService()
+                .newText("", Color.LIGHTGREEN, 18);
+
+        enemiesText.textProperty().bind(
+                FXGL.getip("enemiesKilled").asString("ENEMIES: %d")
+        );
+
+        enemiesText.setTranslateX(20);
+        enemiesText.setTranslateY(90);
+
+        var controlsText = FXGL.getUIFactoryService()
+                .newText("L: Leaderboard | ESC: Pause", Color.LIGHTGRAY, 14);
+
+        controlsText.setTranslateX(20);
+        controlsText.setTranslateY(780);
 
         FXGL.addUINode(scoreText);
         FXGL.addUINode(livesText);
-        FXGL.addUINode(autoFireText);
+        FXGL.addUINode(fireModeText);
+        FXGL.addUINode(enemiesText);
+        FXGL.addUINode(controlsText);
     }
 
 
