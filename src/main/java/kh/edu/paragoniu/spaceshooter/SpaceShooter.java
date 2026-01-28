@@ -16,6 +16,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
+import javafx.scene.image.Image;
 
 import static com.almasb.fxgl.dsl.FXGLForKtKt.getGameWorld;
 import static com.almasb.fxgl.dsl.FXGLForKtKt.spawn;
@@ -120,10 +121,23 @@ public class SpaceShooter extends GameApplication {
         getGameWorld().addEntityFactory(new SpaceFactory());
 
         // Background
-        FXGL.entityBuilder()
-                .view(new Rectangle(800, 800, Color.DARKBLUE))
-                .zIndex(-999)
-                .buildAndAttach();
+        try {
+            Image bgImage = new Image(ClassLoader.getSystemResource("background.jpg").toString());
+            javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(bgImage);
+            imageView.setFitWidth(800);
+            imageView.setFitHeight(800);
+
+            FXGL.entityBuilder()
+                    .view(imageView)
+                    .zIndex(-999)
+                    .buildAndAttach();
+        } catch (Exception e) {
+            // If image not found, use blue background
+            FXGL.entityBuilder()
+                    .view(new Rectangle(800, 800, Color.DARKBLUE))
+                    .zIndex(-999)
+                    .buildAndAttach();
+        }
 
         // Physics component for player
         PhysicsComponent physics = new PhysicsComponent();
