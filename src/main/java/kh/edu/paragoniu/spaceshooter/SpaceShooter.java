@@ -149,6 +149,7 @@ public class SpaceShooter extends GameApplication {
             }
 
         }, Duration.seconds(0.15));
+
         FXGL.run(() -> {
 
             double x = FXGL.random(0, 770);
