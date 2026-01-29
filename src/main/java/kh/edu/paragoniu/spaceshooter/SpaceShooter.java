@@ -241,15 +241,15 @@ public class SpaceShooter extends GameApplication {
             int minEnemies = 2;
             int maxEnemies = 4;
 
-            if (score >= 30) {
+            if (score >= 10) {
                 minEnemies = 4;
                 maxEnemies = 6;
             }
-            if (score >= 60) {
+            if (score >= 30) {
                 minEnemies = 5;
                 maxEnemies = 8;
             }
-            if (score >= 100) {
+            if (score >= 50) {
                 minEnemies = 7;
                 maxEnemies = 10;
             }
@@ -262,7 +262,7 @@ public class SpaceShooter extends GameApplication {
                         -40
                 );
             }
-        }, Duration.seconds(5));
+        }, Duration.seconds(3));
 
     }
 
