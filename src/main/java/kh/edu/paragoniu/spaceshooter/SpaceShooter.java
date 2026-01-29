@@ -21,7 +21,7 @@ import javafx.scene.image.Image;
 import static com.almasb.fxgl.dsl.FXGLForKtKt.getGameWorld;
 import static com.almasb.fxgl.dsl.FXGLForKtKt.spawn;
 
-//test faris
+//test kimseak
 
 public class SpaceShooter extends GameApplication {
 
