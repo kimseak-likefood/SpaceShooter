@@ -96,5 +96,17 @@ public class SpaceFactory implements EntityFactory {
                 .collidable()
                 .build();
     }
+    @Spawns("boss_bullet")
+    public Entity newBossBullet(SpawnData data) {
+        // Bigger red circle for boss bullets
+        Circle bulletCircle = new Circle(20, Color.RED);  // Size 10 (regular is 5)
+
+        return FXGL.entityBuilder(data)
+                .type(SpaceShooter.EntityType.ENEMY_BULLET)
+                .viewWithBBox(bulletCircle)
+                .with(new EnemyBulletMoveComponent())
+                .collidable()
+                .build();
+    }
 
 }

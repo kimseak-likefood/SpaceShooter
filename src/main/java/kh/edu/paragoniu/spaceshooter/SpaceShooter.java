@@ -218,7 +218,7 @@ public class SpaceShooter extends GameApplication {
 
     @Override
     protected void initGame(){
-
+        bossSpawned = false;
         getGameWorld().addEntityFactory(new SpaceFactory());
 
 
@@ -447,7 +447,7 @@ public class SpaceShooter extends GameApplication {
         FXGL.getGameTimer().runAtInterval(() -> {
             int score = FXGL.geti("score");
 
-            if (!bossSpawned && score >= 100) {
+            if (!bossSpawned && score >= 50) {
                 FXGL.spawn("boss",
                         FXGL.getAppWidth() / 2.0 - 80,
                         -120

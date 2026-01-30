@@ -22,6 +22,8 @@ public class BossComponent extends Component {
     private static final double CHANGE_DIR_TIME = 2.0;
     private double directionX;
     private double timeSinceLastChange = 0;
+    private double shootCooldown = 0;
+    private static final double SHOOT_INTERVAL = 1.2;
     private final Random random = new Random();
 
     // Boss health (will be set from your code)
@@ -66,6 +68,13 @@ public class BossComponent extends Component {
 
     @Override
     public void onUpdate(double tpf) {
+        // Boss shooting
+        shootCooldown -= tpf;
+        if (shootCooldown <= 0) {
+            shoot();  // This will create 3 bullets
+            shootCooldown = SHOOT_INTERVAL;
+        }
+
         // Move horizontally
         entity.translateX(directionX * SPEED * tpf);
 
@@ -107,6 +116,16 @@ public class BossComponent extends Component {
 
     private void randomizeDirection() {
         directionX = random.nextBoolean() ? 1 : -1;
+    }
+    private void shoot() {
+        double centerX = entity.getCenter().getX();
+        double bottomY = entity.getBottomY();
+        double width = entity.getWidth();
+
+        // Shoot 3 bullets spread across boss width
+        FXGL.spawn("enemy_bullet", centerX - width/3, bottomY);  // Left
+        FXGL.spawn("enemy_bullet", centerX, bottomY);           // Center
+        FXGL.spawn("enemy_bullet", centerX + width/3, bottomY);  // Right
     }
 
     /**
