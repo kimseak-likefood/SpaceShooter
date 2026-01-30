@@ -183,10 +183,27 @@ public class SpaceShooter extends GameApplication {
 //        }, KeyCode.DIGIT3);
 
         // Add pause/menu key
-        FXGL.getInput().addAction(new UserAction("Pause") {
+        // Add this as a class field at the top of SpaceShooter class
+        final boolean[] isGamePaused = {false};
+
+// Then in initInput() method:
+        FXGL.getInput().addAction(new UserAction("Pause/Resume") {
+            private boolean wasPausedByMenu = false;
+
             @Override
             protected void onActionBegin() {
+                // If we previously paused via menu, just resume
+                if (wasPausedByMenu) {
+                    FXGL.getGameController().resumeEngine();
+                    wasPausedByMenu = false;
+                    return;
+                }
+
+                // Otherwise, pause the engine
                 FXGL.getGameController().pauseEngine();
+
+                // Set a flag so next ESC press will resume
+                wasPausedByMenu = true;
             }
         }, KeyCode.ESCAPE);
 
@@ -426,19 +443,7 @@ public class SpaceShooter extends GameApplication {
 
         // ADDED: Boss spawn at score 100
 
-        FXGL.getGameTimer().runAtInterval(() -> {
-
-            int score = FXGL.geti("score");
-
-            if (score >= 150 && FXGL.getGameWorld().getEntitiesByType(EntityType.BOSS).isEmpty()) {
-                FXGL.spawn("boss",
-                        FXGL.getAppWidth() / 2.0 - 80,
-                        -120
-                );
-            }
-
-        }, Duration.seconds(1));
-
+        // Boss spawns ONCE at score 100
         FXGL.getGameTimer().runAtInterval(() -> {
             int score = FXGL.geti("score");
 
@@ -448,8 +453,7 @@ public class SpaceShooter extends GameApplication {
                         -120
                 );
                 bossSpawned = true;
-
-                FXGL.getip("bossHP").setValue(400); // set HP
+                FXGL.getip("bossHP").setValue(400);
             }
         }, Duration.seconds(1));
 
