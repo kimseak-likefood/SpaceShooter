@@ -230,8 +230,8 @@ public class SpaceShooter extends GameApplication {
                 ClassLoader.getSystemResource("nyan_cat.png").toString()
         );
         ImageView playerView = new ImageView(playerImg);
-        playerView.setFitWidth(75);
-        playerView.setFitHeight(75);
+        playerView.setFitWidth(100);
+        playerView.setFitHeight(100);
         playerView.setPreserveRatio(true);
         playerView.setRotate(-90.0);
 
