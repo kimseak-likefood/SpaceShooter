@@ -204,7 +204,7 @@ public class SpaceShooter extends GameApplication {
 
         // Background
         try {
-            Image bgImage = new Image(ClassLoader.getSystemResource("background.jpg").toString());
+            Image bgImage = new Image(ClassLoader.getSystemResource("space_bg.gif").toString());
             javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(bgImage);
             imageView.setFitWidth(800);
             imageView.setFitHeight(800);
@@ -227,7 +227,7 @@ public class SpaceShooter extends GameApplication {
 
         // Load image and create ImageView
         Image playerImg = new Image(
-                ClassLoader.getSystemResource("nyan_doge.gif").toString()
+                ClassLoader.getSystemResource("nyan_cat.png").toString()
         );
         ImageView playerView = new ImageView(playerImg);
         playerView.setFitWidth(75);

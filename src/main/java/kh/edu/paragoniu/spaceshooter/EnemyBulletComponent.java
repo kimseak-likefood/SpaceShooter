@@ -11,7 +11,7 @@ public class EnemyBulletComponent extends Component {
     private double minCooldown = 0.5; // ADDED
 
 
-    private double fireCooldown = 1.5;
+    private double fireCooldown = 1;
 
     @Override
     public void onUpdate(double tpf) {
