@@ -168,7 +168,7 @@ public class SpaceShooter extends GameApplication {
 
         // Load image and create ImageView
         Image playerImg = new Image(
-                ClassLoader.getSystemResource("nyan_cat.png").toString()
+                ClassLoader.getSystemResource("nyan_doge.gif").toString()
         );
         ImageView playerView = new ImageView(playerImg);
         playerView.setFitWidth(75);
