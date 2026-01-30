@@ -75,4 +75,26 @@ public class SpaceFactory implements EntityFactory {
                 .collidable()
                 .build();
     }
+
+
+    // Boss entity
+
+    @Spawns("boss")
+    public Entity newBoss(SpawnData data) {
+
+        ImageView bossView = new ImageView(
+                new Image(ClassLoader.getSystemResource("dog.png").toString())
+        );
+        bossView.setFitWidth(160);
+        bossView.setFitHeight(160);
+        bossView.setPreserveRatio(true);
+
+        return FXGL.entityBuilder(data)
+                .type(SpaceShooter.EntityType.BOSS)
+                .viewWithBBox(bossView)
+                .with(new BossComponent())
+                .collidable()
+                .build();
+    }
+
 }
