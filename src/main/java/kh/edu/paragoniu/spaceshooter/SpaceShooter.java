@@ -17,6 +17,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import javafx.scene.image.Image;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
 import static com.almasb.fxgl.dsl.FXGLForKtKt.getGameWorld;
 import static com.almasb.fxgl.dsl.FXGLForKtKt.spawn;
@@ -26,16 +29,25 @@ import static com.almasb.fxgl.dsl.FXGLForKtKt.spawn;
 public class SpaceShooter extends GameApplication {
 
     public enum EntityType {
-        PLAYER, BULLET, OBSTACLE, ENEMY_SHIP, ENEMY_BULLET
+        PLAYER, BULLET, OBSTACLE, ENEMY_SHIP, ENEMY_BULLET, ENEMY, BOSS
     }
     private int fireMode;
     private Entity player;
     private static final Point2D GUN_OFFSET = new Point2D(20, -10);
+    private boolean bossSpawned = false;
+    private Rectangle damageOverlay;
 
 
-    
+
+
 
     private static final double PLAYER_SIZE = 75; // match ImageView size
+
+    private void flashDamage() {
+        damageOverlay.setOpacity(0.5); // flash red
+        FXGL.getGameTimer().runOnceAfter(() -> damageOverlay.setOpacity(0), javafx.util.Duration.seconds(0.2));
+    }
+
 
 
 
@@ -293,36 +305,65 @@ public class SpaceShooter extends GameApplication {
 
         }, Duration.seconds(1));
 
-        FXGL.getGameTimer().runAtInterval(() ->{
+//        FXGL.getGameTimer().runAtInterval(() ->{
+//
+//            int score = FXGL.geti("score");
+//
+//            // Determine how many enemies to spawn
+//            int minEnemies = 2;
+//            int maxEnemies = 4;
+//
+//            if (score >= 10) {
+//                minEnemies = 4;
+//                maxEnemies = 6;
+//            }
+//            if (score >= 30) {
+//                minEnemies = 5;
+//                maxEnemies = 8;
+//            }
+//            if (score >= 50) {
+//                minEnemies = 7;
+//                maxEnemies = 10;
+//            }
+//
+//            int enemy_ships = FXGL.random(minEnemies, maxEnemies);
+//
+//            for (int i = 0; i < enemy_ships; i++) {
+//                FXGL.spawn("enemy_ship",
+//                        FXGL.random(0, FXGL.getAppWidth() - 60),
+//                        -40
+//                );
+//            }
+//        }, Duration.seconds(3));
+
+
+        // Enemy formation spawn near top edge
+
+        FXGL.getGameTimer().runAtInterval(() -> {
 
             int score = FXGL.geti("score");
 
-            // Determine how many enemies to spawn
-            int minEnemies = 2;
-            int maxEnemies = 4;
+            // number of enemies in one row (scales with score)
+            int enemiesInRow = 3;
 
-            if (score >= 10) {
-                minEnemies = 4;
-                maxEnemies = 6;
-            }
-            if (score >= 30) {
-                minEnemies = 5;
-                maxEnemies = 8;
-            }
-            if (score >= 50) {
-                minEnemies = 7;
-                maxEnemies = 10;
+            if (score >= 20) enemiesInRow = 4;
+            if (score >= 40) enemiesInRow = 5;
+            if (score >= 70) enemiesInRow = 6;
+            if (score >= 100) enemiesInRow = 7;
+            if (score >= 150) enemiesInRow = 8;
+
+            double screenWidth = FXGL.getAppWidth();
+            double startY = -40; // near top edge
+            double spacing = screenWidth / (enemiesInRow + 1);
+
+            for (int i = 0; i < enemiesInRow; i++) {
+                double x = spacing * (i + 1) - 30; // center enemy
+
+                FXGL.spawn("enemy_ship", x, startY);
             }
 
-            int enemy_ships = FXGL.random(minEnemies, maxEnemies);
-
-            for (int i = 0; i < enemy_ships; i++) {
-                FXGL.spawn("enemy_ship",
-                        FXGL.random(0, FXGL.getAppWidth() - 60),
-                        -40
-                );
-            }
         }, Duration.seconds(3));
+
 
 
         // ADDED: Extra enemy spawner based on high score
@@ -365,6 +406,58 @@ public class SpaceShooter extends GameApplication {
         }, Duration.seconds(4));
 
 
+        // Enemy synchronized shooting
+
+        FXGL.getGameTimer().runAtInterval(() -> {
+
+            FXGL.getGameWorld()
+                    .getEntitiesByType(EntityType.ENEMY)
+                    .forEach(enemy -> {
+
+                        FXGL.spawn("enemy_bullet",
+                                enemy.getX() + enemy.getWidth() / 2 - 5,
+                                enemy.getY() + enemy.getHeight()
+                        );
+                    });
+
+        }, Duration.seconds(1.2));
+        
+
+
+        // ADDED: Boss spawn at score 100
+
+        FXGL.getGameTimer().runAtInterval(() -> {
+
+            int score = FXGL.geti("score");
+
+            if (score >= 150 && FXGL.getGameWorld().getEntitiesByType(EntityType.BOSS).isEmpty()) {
+                FXGL.spawn("boss",
+                        FXGL.getAppWidth() / 2.0 - 80,
+                        -120
+                );
+            }
+
+        }, Duration.seconds(1));
+
+        FXGL.getGameTimer().runAtInterval(() -> {
+            int score = FXGL.geti("score");
+
+            if (!bossSpawned && score >= 100) {
+                FXGL.spawn("boss",
+                        FXGL.getAppWidth() / 2.0 - 80,
+                        -120
+                );
+                bossSpawned = true;
+
+                FXGL.getip("bossHP").setValue(400); // set HP
+            }
+        }, Duration.seconds(1));
+
+
+
+
+
+
     }
 
     @Override
@@ -372,6 +465,7 @@ public class SpaceShooter extends GameApplication {
         vars.put("score", 0);
         vars.put("lives", 3);
         vars.put("enemiesKilled", 0);
+        vars.put("bossHP", 0);
     }
 
     @Override
@@ -395,7 +489,7 @@ public class SpaceShooter extends GameApplication {
         FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.ENEMY_BULLET, (player, enemyBullet) -> {
             enemyBullet.removeFromWorld();
             FXGL.inc("lives", -1);
-
+            flashDamage();
             if (FXGL.geti("lives") <= 0) {
                 GameOverHandler.handleGameOver();
             }
@@ -405,7 +499,7 @@ public class SpaceShooter extends GameApplication {
         FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.ENEMY_SHIP, (player, enemy) -> {
             enemy.removeFromWorld();
             FXGL.inc("lives", -1);
-
+            flashDamage();
             if (FXGL.geti("lives") <= 0) {
                 GameOverHandler.handleGameOver();
             }
@@ -415,11 +509,56 @@ public class SpaceShooter extends GameApplication {
         FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.OBSTACLE, (player, obstacle) -> {
             obstacle.removeFromWorld();
             FXGL.inc("lives", -1);
+            flashDamage();
+            if (FXGL.geti("lives") <= 0) {
+                GameOverHandler.handleGameOver();
+            }
+        });
+
+
+        //  Bullet hits Boss
+
+        FXGL.onCollisionBegin(EntityType.BULLET, EntityType.BOSS, (bullet, boss) -> {
+
+            bullet.removeFromWorld();
+
+            boss.getComponent(BossComponent.class).damage(1);
+        });
+
+        FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.ENEMY_BULLET, (player, enemyBullet) -> {
+            enemyBullet.removeFromWorld();
+            FXGL.inc("lives", -1);
+
+            flashDamage(); // ⚡ call flash here
 
             if (FXGL.geti("lives") <= 0) {
                 GameOverHandler.handleGameOver();
             }
         });
+
+        FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.ENEMY_SHIP, (player, enemy) -> {
+            enemy.removeFromWorld();
+            FXGL.inc("lives", -1);
+
+            flashDamage();
+
+            if (FXGL.geti("lives") <= 0) {
+                GameOverHandler.handleGameOver();
+            }
+        });
+
+        FXGL.onCollisionBegin(EntityType.PLAYER, EntityType.OBSTACLE, (player, obstacle) -> {
+            obstacle.removeFromWorld();
+            FXGL.inc("lives", -1);
+
+            flashDamage();
+
+            if (FXGL.geti("lives") <= 0) {
+                GameOverHandler.handleGameOver();
+            }
+        });
+
+
     }
 
     @Override
@@ -485,6 +624,26 @@ public class SpaceShooter extends GameApplication {
         FXGL.addUINode(fireModeText);
         FXGL.addUINode(enemiesText);
         FXGL.addUINode(controlsText);
+        // Boss HP Text
+        var bossHPText = FXGL.getUIFactoryService()
+                .newText("", Color.RED, 20);
+
+        bossHPText.textProperty().bind(
+                FXGL.getip("bossHP").asString("BOSS HP: %d")
+        );
+
+        bossHPText.setTranslateX(550);
+        bossHPText.setTranslateY(60);
+
+        FXGL.addUINode(bossHPText);
+
+        // Damage overlay (screen flash when player gets hit)
+        damageOverlay = new Rectangle(FXGL.getAppWidth(), FXGL.getAppHeight(), Color.RED);
+        damageOverlay.setOpacity(0); // invisible initially
+        FXGL.addUINode(damageOverlay);
+
+
+
     }
 
 
