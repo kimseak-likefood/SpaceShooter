@@ -21,7 +21,7 @@ import javafx.scene.image.Image;
 import static com.almasb.fxgl.dsl.FXGLForKtKt.getGameWorld;
 import static com.almasb.fxgl.dsl.FXGLForKtKt.spawn;
 
-//test kimseak
+//test kimseak sssss
 
 public class SpaceShooter extends GameApplication {
 
@@ -31,6 +31,55 @@ public class SpaceShooter extends GameApplication {
     private int fireMode;
     private Entity player;
     private static final Point2D GUN_OFFSET = new Point2D(20, -10);
+
+
+    
+
+    private static final double PLAYER_SIZE = 75; // match ImageView size
+
+
+
+    // ADDED: Direction-aware boundary control
+
+    private void keepPlayerInBoundsSmart() {
+
+        PhysicsComponent physics = player.getComponent(PhysicsComponent.class);
+
+        double x = player.getX();
+        double y = player.getY();
+
+        double maxX = FXGL.getAppWidth() - PLAYER_SIZE;
+        double maxY = FXGL.getAppHeight() - PLAYER_SIZE;
+
+        // LEFT wall
+        if (x <= 0 && physics.getVelocityX() < 0) {
+            physics.setVelocityX(0);
+            player.setX(0);
+        }
+
+        // RIGHT wall
+        if (x >= maxX && physics.getVelocityX() > 0) {
+            physics.setVelocityX(0);
+            player.setX(maxX);
+        }
+
+        // TOP wall
+        if (y <= 0 && physics.getVelocityY() < 0) {
+            physics.setVelocityY(0);
+            player.setY(0);
+        }
+
+        // BOTTOM wall
+        if (y >= maxY && physics.getVelocityY() > 0) {
+            physics.setVelocityY(0);
+            player.setY(maxY);
+        }
+    }
+
+
+
+
+
 
     @Override
     protected void initSettings(GameSettings gameSettings) {
@@ -142,6 +191,16 @@ public class SpaceShooter extends GameApplication {
     protected void initGame(){
 
         getGameWorld().addEntityFactory(new SpaceFactory());
+
+
+        // ADDED: Smart frame boundary enforcement
+
+        FXGL.getGameTimer().runAtInterval(
+                this::keepPlayerInBoundsSmart,
+                Duration.seconds(0.001)
+        );
+
+
 
         // Background
         try {
@@ -264,6 +323,47 @@ public class SpaceShooter extends GameApplication {
                 );
             }
         }, Duration.seconds(3));
+
+
+        // ADDED: Extra enemy spawner based on high score
+
+        FXGL.getGameTimer().runAtInterval(() -> {
+
+            int score = FXGL.geti("score");
+
+            if (score >= 40) {
+                int extraEnemies = score / 20; // more score = more enemies
+
+                for (int i = 0; i < extraEnemies; i++) {
+                    FXGL.spawn("enemy_ship",
+                            FXGL.random(0, FXGL.getAppWidth() - 60),
+                            -60
+                    );
+                }
+            }
+
+        }, Duration.seconds(5));
+
+
+        // ADDED: Extra obstacles based on score
+
+        FXGL.getGameTimer().runAtInterval(() -> {
+
+            int score = FXGL.geti("score");
+
+            if (score >= 30) {
+                int extraObstacles = score / 15;
+
+                for (int i = 0; i < extraObstacles; i++) {
+                    FXGL.spawn("obstacle",
+                            FXGL.random(0, FXGL.getAppWidth() - 30),
+                            -40
+                    );
+                }
+            }
+
+        }, Duration.seconds(4));
+
 
     }
 

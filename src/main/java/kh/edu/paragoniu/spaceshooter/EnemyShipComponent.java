@@ -7,6 +7,12 @@ import java.util.Random;
 
 public class EnemyShipComponent extends Component {
 
+
+    // ADDED: Dynamic speed scaling with score
+
+    private double speedMultiplier = 0.6; // ADDED
+
+
     private static final double SPEED = 100;
     private static final double CHANGE_DIR_TIME = 1.5; // seconds
 
@@ -46,6 +52,17 @@ public class EnemyShipComponent extends Component {
         if (entity.getX() <= 0 || entity.getRightX() >= screenWidth) {
             directionX *= -1;
         }
+
+        // ADDED: Increase enemy speed based on score
+
+        int score = FXGL.geti("score");
+
+        // ADDED: Scaled movement
+
+        entity.translateY(SPEED * speedMultiplier * tpf);
+        entity.translateX(directionX * SPEED * speedMultiplier * tpf);
+
+
     }
 
     private void randomizeDirection() {
