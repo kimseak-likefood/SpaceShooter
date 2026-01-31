@@ -8,7 +8,7 @@ import javafx.util.Duration;
 public class BossComponent extends Component {
 
     // Boss stats
-    private int hp = 400;
+    private int hp = 200;
 
     // Movement
     private double verticalSpeed = 40;    // moves down initially
@@ -57,14 +57,14 @@ public class BossComponent extends Component {
             // 3️⃣ Start shooting bullets only once
             if (!shootingStarted) {
                 shootingStarted = true;
-                FXGL.getGameTimer().runAtInterval(this::shoot, Duration.seconds(0.3));
+                FXGL.getGameTimer().runAtInterval(this::shoot, Duration.seconds(2));
             }
         }
         if (!shootingStarted) {
             shootingStarted = true;
 
             // shoot every 0.5 seconds instead of 0.3
-            FXGL.getGameTimer().runAtInterval(this::shoot, javafx.util.Duration.seconds(1));
+            FXGL.getGameTimer().runAtInterval(this::shoot, javafx.util.Duration.seconds(2));
         }
 
     }

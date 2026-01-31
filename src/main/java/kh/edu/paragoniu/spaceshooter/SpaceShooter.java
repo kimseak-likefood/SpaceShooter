@@ -348,9 +348,9 @@ public class SpaceShooter extends GameApplication {
 
             if (score >= 20) enemiesInRow = 4;
             if (score >= 40) enemiesInRow = 5;
-            if (score >= 70) enemiesInRow = 6;
-            if (score >= 100) enemiesInRow = 7;
-            if (score >= 150) enemiesInRow = 8;
+            if (score >= 60) enemiesInRow = 6;
+            if (score >= 80) enemiesInRow = 7;
+            if (score >= 100) enemiesInRow = 8;
 
             double screenWidth = FXGL.getAppWidth();
             double startY = -40; // near top edge
@@ -393,7 +393,7 @@ public class SpaceShooter extends GameApplication {
             int score = FXGL.geti("score");
 
             if (score >= 30) {
-                int extraObstacles = score / 15;
+                int extraObstacles = score / 20;
 
                 for (int i = 0; i < extraObstacles; i++) {
                     FXGL.spawn("obstacle",
@@ -403,7 +403,7 @@ public class SpaceShooter extends GameApplication {
                 }
             }
 
-        }, Duration.seconds(4));
+        }, Duration.seconds(5));
 
 
         // Enemy synchronized shooting
@@ -430,7 +430,7 @@ public class SpaceShooter extends GameApplication {
 
             int score = FXGL.geti("score");
 
-            if (score >= 150 && FXGL.getGameWorld().getEntitiesByType(EntityType.BOSS).isEmpty()) {
+            if (score >= 80 && FXGL.getGameWorld().getEntitiesByType(EntityType.BOSS).isEmpty()) {
                 FXGL.spawn("boss",
                         FXGL.getAppWidth() / 2.0 - 80,
                         -120
@@ -442,7 +442,7 @@ public class SpaceShooter extends GameApplication {
         FXGL.getGameTimer().runAtInterval(() -> {
             int score = FXGL.geti("score");
 
-            if (!bossSpawned && score >= 100) {
+            if (!bossSpawned && score >= 80) {
                 FXGL.spawn("boss",
                         FXGL.getAppWidth() / 2.0 - 80,
                         -120
