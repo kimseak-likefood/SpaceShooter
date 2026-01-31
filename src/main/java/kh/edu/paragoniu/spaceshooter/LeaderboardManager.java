@@ -36,7 +36,7 @@ public class LeaderboardManager {
 
     public static void showLeaderboard() {
         StringBuilder text = new StringBuilder();
-        text.append("🏆 LEADERBOARD 🏆\n\n");
+        text.append(" LEADERBOARD \n\n");
 
         if (leaderboard.isEmpty()) {
             text.append("No scores yet!");

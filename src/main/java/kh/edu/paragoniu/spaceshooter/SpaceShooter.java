@@ -183,10 +183,27 @@ public class SpaceShooter extends GameApplication {
 //        }, KeyCode.DIGIT3);
 
         // Add pause/menu key
-        FXGL.getInput().addAction(new UserAction("Pause") {
+        // Add this as a class field at the top of SpaceShooter class
+        final boolean[] isGamePaused = {false};
+
+// Then in initInput() method:
+        FXGL.getInput().addAction(new UserAction("Pause/Resume") {
+            private boolean wasPausedByMenu = false;
+
             @Override
             protected void onActionBegin() {
+                // If we previously paused via menu, just resume
+                if (wasPausedByMenu) {
+                    FXGL.getGameController().resumeEngine();
+                    wasPausedByMenu = false;
+                    return;
+                }
+
+                // Otherwise, pause the engine
                 FXGL.getGameController().pauseEngine();
+
+                // Set a flag so next ESC press will resume
+                wasPausedByMenu = true;
             }
         }, KeyCode.ESCAPE);
 
@@ -201,7 +218,7 @@ public class SpaceShooter extends GameApplication {
 
     @Override
     protected void initGame(){
-
+        bossSpawned = false;
         getGameWorld().addEntityFactory(new SpaceFactory());
 
 
@@ -242,8 +259,8 @@ public class SpaceShooter extends GameApplication {
                 ClassLoader.getSystemResource("nyan_cat.png").toString()
         );
         ImageView playerView = new ImageView(playerImg);
-        playerView.setFitWidth(100);
-        playerView.setFitHeight(100);
+        playerView.setFitWidth(75);
+        playerView.setFitHeight(75);
         playerView.setPreserveRatio(true);
         playerView.setRotate(-90.0);
 
@@ -348,9 +365,9 @@ public class SpaceShooter extends GameApplication {
 
             if (score >= 20) enemiesInRow = 4;
             if (score >= 40) enemiesInRow = 5;
-            if (score >= 60) enemiesInRow = 6;
-            if (score >= 80) enemiesInRow = 7;
-            if (score >= 100) enemiesInRow = 8;
+            if (score >= 70) enemiesInRow = 6;
+            if (score >= 100) enemiesInRow = 7;
+            if (score >= 150) enemiesInRow = 8;
 
             double screenWidth = FXGL.getAppWidth();
             double startY = -40; // near top edge
@@ -393,7 +410,7 @@ public class SpaceShooter extends GameApplication {
             int score = FXGL.geti("score");
 
             if (score >= 30) {
-                int extraObstacles = score / 20;
+                int extraObstacles = score / 15;
 
                 for (int i = 0; i < extraObstacles; i++) {
                     FXGL.spawn("obstacle",
@@ -403,7 +420,7 @@ public class SpaceShooter extends GameApplication {
                 }
             }
 
-        }, Duration.seconds(5));
+        }, Duration.seconds(4));
 
 
         // Enemy synchronized shooting
@@ -426,30 +443,17 @@ public class SpaceShooter extends GameApplication {
 
         // ADDED: Boss spawn at score 100
 
-        FXGL.getGameTimer().runAtInterval(() -> {
-
-            int score = FXGL.geti("score");
-
-            if (score >= 80 && FXGL.getGameWorld().getEntitiesByType(EntityType.BOSS).isEmpty()) {
-                FXGL.spawn("boss",
-                        FXGL.getAppWidth() / 2.0 - 80,
-                        -120
-                );
-            }
-
-        }, Duration.seconds(1));
-
+        // Boss spawns ONCE at score 100
         FXGL.getGameTimer().runAtInterval(() -> {
             int score = FXGL.geti("score");
 
-            if (!bossSpawned && score >= 80) {
+            if (!bossSpawned && score >= 50) {
                 FXGL.spawn("boss",
                         FXGL.getAppWidth() / 2.0 - 80,
                         -120
                 );
                 bossSpawned = true;
-
-                FXGL.getip("bossHP").setValue(400); // set HP
+                FXGL.getip("bossHP").setValue(400);
             }
         }, Duration.seconds(1));
 
