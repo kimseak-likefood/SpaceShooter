@@ -8,13 +8,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 
 import java.util.Random;
 
-/**
- * Boss Component with integrated health bar UI
- * Works with your existing SpaceFactory boss spawn
- */
 public class BossComponent extends Component {
 
     // Boss movement
@@ -26,19 +23,18 @@ public class BossComponent extends Component {
     private static final double SHOOT_INTERVAL = 3;
     private final Random random = new Random();
 
-    // Boss health (will be set from your code)
-    private int maxHealth = 200;  // Default
+    // Boss health
+    private int maxHealth = 200;
     private int currentHealth = 200;
 
     // Health bar UI
     private BossHealthBar healthBar;
 
-    // Constructor without parameters (matches your factory)
-    public BossComponent() {
-        // Health will be set via setter or from game variable
-    }
+    // Prevent double death logic
+    private boolean bossDead = false;
 
-    // Constructor with health parameter (for flexibility)
+    public BossComponent() {}
+
     public BossComponent(int maxHealth) {
         this.maxHealth = maxHealth;
         this.currentHealth = maxHealth;
@@ -48,58 +44,48 @@ public class BossComponent extends Component {
     public void onAdded() {
         randomizeDirection();
 
-        // Get health from game variable if it was set
         if (FXGL.getWorldProperties().exists("bossHP")) {
             int hp = FXGL.geti("bossHP");
             if (hp > 0) {
-                this.maxHealth = hp;
-                this.currentHealth = hp;
+                maxHealth = hp;
+                currentHealth = hp;
             }
         }
 
-        // Create and show health bar
         healthBar = new BossHealthBar("THE BOSS", maxHealth);
         FXGL.addUINode(healthBar);
         healthBar.show();
 
-        // Update game variable
         FXGL.set("bossHP", currentHealth);
     }
 
     @Override
     public void onUpdate(double tpf) {
-        // Boss shooting
+        if (bossDead)
+            return;
+
         shootCooldown -= tpf;
         if (shootCooldown <= 0) {
-            shoot();  // This will create 3 bullets
+            shoot();
             shootCooldown = SHOOT_INTERVAL;
         }
 
-        // Move horizontally
         entity.translateX(directionX * SPEED * tpf);
 
-        // Keep boss near top
-        if (entity.getY() > 150) {
-            entity.setY(150);
-        }
-        if (entity.getY() < 50) {
-            entity.setY(50);
-        }
+        if (entity.getY() > 150) entity.setY(150);
+        if (entity.getY() < 50) entity.setY(50);
 
-        // Change direction
         timeSinceLastChange += tpf;
         if (timeSinceLastChange >= CHANGE_DIR_TIME) {
             randomizeDirection();
             timeSinceLastChange = 0;
         }
 
-        // Screen bounds
         double screenWidth = FXGL.getAppWidth();
         if (entity.getX() <= 0 || entity.getRightX() >= screenWidth) {
             directionX *= -1;
         }
 
-        // Update health bar
         if (healthBar != null) {
             healthBar.updateHealth(currentHealth, maxHealth);
         }
@@ -107,7 +93,6 @@ public class BossComponent extends Component {
 
     @Override
     public void onRemoved() {
-        // Remove health bar when boss dies
         if (healthBar != null) {
             healthBar.hide();
             FXGL.removeUINode(healthBar);
@@ -117,20 +102,21 @@ public class BossComponent extends Component {
     private void randomizeDirection() {
         directionX = random.nextBoolean() ? 1 : -1;
     }
+
     private void shoot() {
         double centerX = entity.getCenter().getX();
         double bottomY = entity.getBottomY();
         double width = entity.getWidth();
 
-        // Shoot 3 bullets spread across boss width
-        FXGL.spawn("boss_bullet", centerX - width/3, bottomY);  // Left
-        FXGL.spawn("boss_bullet", centerX, bottomY);           // Center
-        FXGL.spawn("boss_bullet", centerX + width/3, bottomY);  // Right
+        FXGL.spawn("boss_bullet", centerX - width / 3, bottomY);
+        FXGL.spawn("boss_bullet", centerX, bottomY);
+        FXGL.spawn("boss_bullet", centerX + width / 3, bottomY);
     }
 
-    /**
-     * Damage the boss (called from collision handler)
-     */
+    // =====================
+    // DAMAGE & DEATH LOGIC
+    // =====================
+
     public void damage(int amount) {
         currentHealth -= amount;
         if (currentHealth < 0) {
@@ -144,29 +130,73 @@ public class BossComponent extends Component {
         if (currentHealth <= 0) {
             FXGL.inc("score", 100); // Big reward!
             entity.removeFromWorld();
+
+            // ===== SHOW "YOU WON!" =====
+            Text winText = FXGL.getUIFactoryService()
+                    .newText("YOU WON!", Color.GOLD, 72);
+
+            // Temporarily add to scene to get proper bounds
+            FXGL.getGameScene().addUINode(winText);
+
+            // Center text
+            winText.setTranslateX((FXGL.getAppWidth() - winText.getLayoutBounds().getWidth()) / 2);
+            winText.setTranslateY((FXGL.getAppHeight() - winText.getLayoutBounds().getHeight()) / 2);
+
+            // Fade-in animation
+            winText.setOpacity(0);
+            FXGL.animationBuilder()
+                    .duration(javafx.util.Duration.seconds(1))
+                    .fadeIn(winText)
+                    .buildAndPlay();
+
+            // Remove after 2 seconds and exit game
+            FXGL.getGameTimer().runOnceAfter(() -> {
+                FXGL.getGameController().exit(); // Close game
+            }, javafx.util.Duration.seconds(2));
         }
     }
 
-    public int getCurrentHealth() {
-        return currentHealth;
+
+
+    private void onBossKilled() {
+        entity.removeFromWorld();
+
+        // Victory text
+        Text winText = FXGL.getUIFactoryService()
+                .newText("BOSS DEFEATED!", Color.GOLD, 48);
+
+        winText.setTranslateX(
+                FXGL.getAppWidth() / 2.0 - winText.getLayoutBounds().getWidth() / 2
+        );
+        winText.setTranslateY(FXGL.getAppHeight() / 2.0);
+
+        FXGL.addUINode(winText);
+
+        FXGL.animationBuilder()
+                .duration(Duration.seconds(0.5))
+                .fadeIn(winText)
+                .buildAndPlay();
+
+        // End game after delay
+        FXGL.getGameTimer().runOnceAfter(() -> {
+            // Remove the exit
+            FXGL.getGameTimer().runOnceAfter(() -> {
+                // Just fade out the text after 2 seconds
+                FXGL.animationBuilder()
+                        .duration(javafx.util.Duration.seconds(1))
+                        .fadeOut(winText)
+                        .buildAndPlay();
+            }, javafx.util.Duration.seconds(7));
+
+            // Immediately closes game
+
+        }, Duration.seconds(2.5));
     }
 
-    public int getMaxHealth() {
-        return maxHealth;
-    }
+    // =====================
+    // HEALTH BAR UI
+    // =====================
 
-    public void setMaxHealth(int health) {
-        this.maxHealth = health;
-        this.currentHealth = health;
-    }
-
-    // ========================================
-    // INNER CLASS: Boss Health Bar UI
-    // ========================================
-
-    /**
-     * Fancy boss health bar (Elden Ring style)
-     */
     private static class BossHealthBar extends StackPane {
 
         private Rectangle background;
@@ -178,21 +208,17 @@ public class BossComponent extends Component {
         private static final double BAR_HEIGHT = 30;
 
         public BossHealthBar(String bossName, int maxHealth) {
-            // Background (dark)
             background = new Rectangle(BAR_WIDTH, BAR_HEIGHT);
             background.setFill(Color.rgb(20, 20, 20, 0.9));
 
-            // Health bar (red)
             healthBar = new Rectangle(BAR_WIDTH - 4, BAR_HEIGHT - 4);
             healthBar.setFill(Color.rgb(180, 40, 40));
 
-            // Border (gold)
             border = new Rectangle(BAR_WIDTH, BAR_HEIGHT);
             border.setFill(Color.TRANSPARENT);
             border.setStroke(Color.rgb(200, 170, 100));
             border.setStrokeWidth(3);
 
-            // Boss name
             bossNameText = new Text(bossName);
             bossNameText.setFont(Font.font("Serif", FontWeight.BOLD, 20));
             bossNameText.setFill(Color.rgb(220, 190, 120));
@@ -200,50 +226,28 @@ public class BossComponent extends Component {
 
             getChildren().addAll(background, healthBar, border, bossNameText);
 
-            // Position at top center
             setTranslateX((FXGL.getAppWidth() - BAR_WIDTH) / 2);
             setTranslateY(80);
             setVisible(false);
         }
 
-        /**
-         * Update health bar
-         */
         public void updateHealth(int currentHealth, int maxHealth) {
-            double healthPercent = (double) currentHealth / maxHealth;
-            double newWidth = (BAR_WIDTH - 4) * healthPercent;
-
-            healthBar.setWidth(Math.max(0, newWidth));
-
-            // Change color based on health
-            if (healthPercent > 0.6) {
-                healthBar.setFill(Color.rgb(180, 40, 40)); // Red
-            } else if (healthPercent > 0.3) {
-                healthBar.setFill(Color.rgb(200, 100, 30)); // Orange
-            } else {
-                healthBar.setFill(Color.rgb(220, 60, 60)); // Bright red
-            }
+            double percent = (double) currentHealth / maxHealth;
+            healthBar.setWidth((BAR_WIDTH - 4) * percent);
         }
 
-        /**
-         * Show with fade-in animation
-         */
         public void show() {
             setVisible(true);
             setOpacity(0);
-
             FXGL.animationBuilder()
-                    .duration(javafx.util.Duration.seconds(0.5))
+                    .duration(Duration.seconds(0.5))
                     .fadeIn(this)
                     .buildAndPlay();
         }
 
-        /**
-         * Hide with fade-out animation
-         */
         public void hide() {
             FXGL.animationBuilder()
-                    .duration(javafx.util.Duration.seconds(0.5))
+                    .duration(Duration.seconds(0.5))
                     .fadeOut(this)
                     .buildAndPlay();
         }
