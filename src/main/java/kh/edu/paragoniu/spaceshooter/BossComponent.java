@@ -23,12 +23,12 @@ public class BossComponent extends Component {
     private double directionX;
     private double timeSinceLastChange = 0;
     private double shootCooldown = 0;
-    private static final double SHOOT_INTERVAL = 1.2;
+    private static final double SHOOT_INTERVAL = 3;
     private final Random random = new Random();
 
     // Boss health (will be set from your code)
-    private int maxHealth = 400;  // Default
-    private int currentHealth = 400;
+    private int maxHealth = 200;  // Default
+    private int currentHealth = 200;
 
     // Health bar UI
     private BossHealthBar healthBar;
@@ -123,9 +123,9 @@ public class BossComponent extends Component {
         double width = entity.getWidth();
 
         // Shoot 3 bullets spread across boss width
-        FXGL.spawn("enemy_bullet", centerX - width/3, bottomY);  // Left
-        FXGL.spawn("enemy_bullet", centerX, bottomY);           // Center
-        FXGL.spawn("enemy_bullet", centerX + width/3, bottomY);  // Right
+        FXGL.spawn("boss_bullet", centerX - width/3, bottomY);  // Left
+        FXGL.spawn("boss_bullet", centerX, bottomY);           // Center
+        FXGL.spawn("boss_bullet", centerX + width/3, bottomY);  // Right
     }
 
     /**
