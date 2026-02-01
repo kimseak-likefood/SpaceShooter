@@ -36,10 +36,9 @@ public class SpaceShooter extends GameApplication {
     private static final Point2D GUN_OFFSET = new Point2D(20, -10);
     private boolean bossSpawned = false;
     private Rectangle damageOverlay;
-
-
-
-
+    private BossWarningFX bossWarningFx;
+    private boolean bossWarningPlayed = false;
+    private Rectangle screenOverlay;
 
     private static final double PLAYER_SIZE = 75; // match ImageView size
 
@@ -47,8 +46,6 @@ public class SpaceShooter extends GameApplication {
         damageOverlay.setOpacity(0.5); // flash red
         FXGL.getGameTimer().runOnceAfter(() -> damageOverlay.setOpacity(0), javafx.util.Duration.seconds(0.2));
     }
-
-
 
 
     // ADDED: Direction-aware boundary control
@@ -87,10 +84,6 @@ public class SpaceShooter extends GameApplication {
             player.setY(maxY);
         }
     }
-
-
-
-
 
 
     @Override
@@ -181,6 +174,7 @@ public class SpaceShooter extends GameApplication {
 //                fireMode = 3;
 //            }
 //        }, KeyCode.DIGIT3);
+
 
         // Add pause/menu key
         // Add this as a class field at the top of SpaceShooter class
@@ -276,6 +270,7 @@ public class SpaceShooter extends GameApplication {
         // Auto-fire system with automatic upgrade based on score
         FXGL.getGameTimer().runAtInterval(() -> {
 
+
             Point2D center = player.getCenter();
 
             // Calculate current fire mode based on score
@@ -314,6 +309,8 @@ public class SpaceShooter extends GameApplication {
 
         }, Duration.seconds(0.15));
 
+
+        //Spawn cucumber
         FXGL.getGameTimer().runAtInterval(() -> {
 
             double x = FXGL.random(0, 770);
@@ -364,10 +361,10 @@ public class SpaceShooter extends GameApplication {
             int enemiesInRow = 3;
 
             if (score >= 20) enemiesInRow = 4;
-            if (score >= 40) enemiesInRow = 5;
-            if (score >= 70) enemiesInRow = 6;
-            if (score >= 100) enemiesInRow = 7;
-            if (score >= 150) enemiesInRow = 8;
+            if (score >= 30) enemiesInRow = 5;
+            if (score >= 40) enemiesInRow = 6;
+            if (score >= 50) enemiesInRow = 7;
+            if (score >= 60) enemiesInRow = 8;
 
             double screenWidth = FXGL.getAppWidth();
             double startY = -40; // near top edge
@@ -400,27 +397,33 @@ public class SpaceShooter extends GameApplication {
                 }
             }
 
-        }, Duration.seconds(5));
+        }, Duration.seconds(4));
 
 
         // ADDED: Extra obstacles based on score
 
-        FXGL.getGameTimer().runAtInterval(() -> {
-
-            int score = FXGL.geti("score");
-
-            if (score >= 30) {
-                int extraObstacles = score / 15;
-
-                for (int i = 0; i < extraObstacles; i++) {
-                    FXGL.spawn("obstacle",
-                            FXGL.random(0, FXGL.getAppWidth() - 30),
-                            -40
-                    );
-                }
-            }
-
-        }, Duration.seconds(4));
+//        FXGL.getGameTimer().runAtInterval(() -> {
+//
+//            int score = FXGL.geti("score");
+//
+//            if(score < 30){
+//                double x = FXGL.random(0, 770);
+//
+//                FXGL.spawn("obstacle", x, -40);
+//            }
+//
+//            if (score >= 30) {
+//                int extraObstacles = score / 15;
+//
+//                for (int i = 0; i < extraObstacles; i++) {
+//                    FXGL.spawn("obstacle",
+//                            FXGL.random(0, FXGL.getAppWidth() - 30),
+//                            -40
+//                    );
+//                }
+//            }
+//
+//        }, Duration.seconds(1));
 
 
         // Enemy synchronized shooting
@@ -438,28 +441,32 @@ public class SpaceShooter extends GameApplication {
                     });
 
         }, Duration.seconds(1.2));
-        
 
+        // Create BossWarningFX first
+        bossWarningFx = new BossWarningFX();
 
-        // ADDED: Boss spawn at score 100
+        FXGL.getip("score").addListener((obs, oldScore, newScore) -> {
+            if (!bossWarningPlayed && newScore.intValue() >= 60) {
+                bossWarningPlayed = true;
+                System.out.println("Boss warning triggered!");
+                bossWarningFx.play();
+            }
+        });
 
-        // Boss spawns ONCE at score 100
+        // Boss spawns ONCE at score 60
         FXGL.getGameTimer().runAtInterval(() -> {
             int score = FXGL.geti("score");
 
-            if (!bossSpawned && score >= 50) {
+            if (!bossSpawned && score >= 60) {
+                bossSpawned = true;
                 FXGL.spawn("boss",
                         FXGL.getAppWidth() / 2.0 - 80,
                         -120
                 );
-                bossSpawned = true;
-                FXGL.getip("bossHP").setValue(400);
+
+                FXGL.getip("bossHP").setValue(100);
             }
-        }, Duration.seconds(1));
-
-
-
-
+        }, Duration.seconds(0.5));
 
 
     }
@@ -641,11 +648,9 @@ public class SpaceShooter extends GameApplication {
 
         FXGL.addUINode(bossHPText);
 
-        // Damage overlay (screen flash when player gets hit)
         damageOverlay = new Rectangle(FXGL.getAppWidth(), FXGL.getAppHeight(), Color.RED);
         damageOverlay.setOpacity(0); // invisible initially
         FXGL.addUINode(damageOverlay);
-
 
 
     }
