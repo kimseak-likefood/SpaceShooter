@@ -38,9 +38,6 @@ public class SpaceShooter extends GameApplication {
     private Rectangle damageOverlay;
 
 
-
-
-
     private static final double PLAYER_SIZE = 75; // match ImageView size
 
     private void flashDamage() {
@@ -153,37 +150,7 @@ public class SpaceShooter extends GameApplication {
                 player.getComponent(PhysicsComponent.class).setVelocityY(0);
             }
         }, KeyCode.W);
-//        FXGL.getInput().addAction(new UserAction("Shoot") {
-//            @Override
-//            protected void onActionBegin() {
-//                spawn("bullet", player.getCenter());
-//            }
-//        }, KeyCode.SPACE);
-
-
-//        FXGL.getInput().addAction(new UserAction("Single Shot") {
-//            @Override
-//            protected void onActionBegin() {
-//                fireMode = 1;
-//            }
-//        }, KeyCode.DIGIT1);
 //
-//        FXGL.getInput().addAction(new UserAction("Double Shot") {
-//            @Override
-//            protected void onActionBegin() {
-//                fireMode = 2;
-//            }
-//        }, KeyCode.DIGIT2);
-//
-//        FXGL.getInput().addAction(new UserAction("Triple Shot") {
-//            @Override
-//            protected void onActionBegin() {
-//                fireMode = 3;
-//            }
-//        }, KeyCode.DIGIT3);
-
-        // Add pause/menu key
-        // Add this as a class field at the top of SpaceShooter class
         final boolean[] isGamePaused = {false};
 
 // Then in initInput() method:
@@ -221,15 +188,12 @@ public class SpaceShooter extends GameApplication {
         bossSpawned = false;
         getGameWorld().addEntityFactory(new SpaceFactory());
 
-
         // ADDED: Smart frame boundary enforcement
 
         FXGL.getGameTimer().runAtInterval(
                 this::keepPlayerInBoundsSmart,
                 Duration.seconds(0.001)
         );
-
-
 
         // Background
         try {
@@ -280,15 +244,6 @@ public class SpaceShooter extends GameApplication {
 
             // Calculate current fire mode based on score
             int score = FXGL.geti("score");
-//            int currentFireMode;
-//
-//            if (score >= 100) {
-//                currentFireMode = 3; // Triple shot at 200+ points
-//            } else if (score >= 30) {
-//                currentFireMode = 2; // Double shot at 100+ points
-//            } else {
-//                currentFireMode = 1; // Single shot below 100 points
-//            }
 
             fireMode = score >= 60 ? 3
                     : score >= 30 ? 2
@@ -321,40 +276,6 @@ public class SpaceShooter extends GameApplication {
             FXGL.spawn("obstacle", x, -40);
 
         }, Duration.seconds(1));
-
-//        FXGL.getGameTimer().runAtInterval(() ->{
-//
-//            int score = FXGL.geti("score");
-//
-//            // Determine how many enemies to spawn
-//            int minEnemies = 2;
-//            int maxEnemies = 4;
-//
-//            if (score >= 10) {
-//                minEnemies = 4;
-//                maxEnemies = 6;
-//            }
-//            if (score >= 30) {
-//                minEnemies = 5;
-//                maxEnemies = 8;
-//            }
-//            if (score >= 50) {
-//                minEnemies = 7;
-//                maxEnemies = 10;
-//            }
-//
-//            int enemy_ships = FXGL.random(minEnemies, maxEnemies);
-//
-//            for (int i = 0; i < enemy_ships; i++) {
-//                FXGL.spawn("enemy_ship",
-//                        FXGL.random(0, FXGL.getAppWidth() - 60),
-//                        -40
-//                );
-//            }
-//        }, Duration.seconds(3));
-
-
-        // Enemy formation spawn near top edge
 
         FXGL.getGameTimer().runAtInterval(() -> {
 
@@ -457,11 +378,6 @@ public class SpaceShooter extends GameApplication {
             }
         }, Duration.seconds(1));
 
-
-
-
-
-
     }
 
     @Override
@@ -561,8 +477,6 @@ public class SpaceShooter extends GameApplication {
                 GameOverHandler.handleGameOver();
             }
         });
-
-
     }
 
     @Override
@@ -646,11 +560,7 @@ public class SpaceShooter extends GameApplication {
         damageOverlay.setOpacity(0); // invisible initially
         FXGL.addUINode(damageOverlay);
 
-
-
     }
-
-
 
     public static void main(String[] args){
         launch(args);

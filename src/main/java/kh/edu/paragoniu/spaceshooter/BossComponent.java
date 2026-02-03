@@ -113,9 +113,8 @@ public class BossComponent extends Component {
         FXGL.spawn("boss_bullet", centerX + width / 3, bottomY);
     }
 
-    // =====================
+
     // DAMAGE & DEATH LOGIC
-    // =====================
 
     public void damage(int amount) {
         currentHealth -= amount;
@@ -193,9 +192,7 @@ public class BossComponent extends Component {
         }, Duration.seconds(2.5));
     }
 
-    // =====================
     // HEALTH BAR UI
-    // =====================
 
     private static class BossHealthBar extends StackPane {
 
